@@ -8,22 +8,22 @@ packages:
 
 write_files:
   - path: /opt/openclaw/discovery/01-oci-genai-chat-candidates.json
+    encoding: b64
     permissions: '0644'
     owner: root:root
-    content: |
-${indent(6, discovery_candidates_json)}
+    content: ${discovery_candidates_json_b64}
 
   - path: /opt/openclaw/discovery/02-discover-oci-genai-chat-models.py
+    encoding: b64
     permissions: '0755'
     owner: root:root
-    content: |
-${indent(6, discovery_script_py)}
+    content: ${discovery_script_py_b64}
 
   - path: /etc/systemd/system/openclaw-model-discovery.service
+    encoding: b64
     permissions: '0644'
     owner: root:root
-    content: |
-${indent(6, discovery_service_unit)}
+    content: ${discovery_service_unit_b64}
 
   - path: /etc/openclaw/oci-genai.env
     permissions: '0600'
