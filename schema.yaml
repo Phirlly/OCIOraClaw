@@ -2,13 +2,7 @@ schemaVersion: 1.1.0
 version: "2026.04.05"
 locale: "en"
 groupings:
-  - title: "OpenClaw Access"
-    visible: true
-    items:
-      - ssh_public_key
-      - oci_genai_api_key
-
-  - title: "OpenClaw Instance"
+  - title: "OpenClaw Deployment"
     visible: true
     items:
       - availability_domain
@@ -17,6 +11,8 @@ groupings:
       - image_id
       - instance_ocpus
       - instance_memory_gbs
+      - ssh_public_key
+      - oci_genai_api_key
 
   - title: "Hidden Resource Manager Context"
     visible: false
@@ -39,29 +35,17 @@ variables:
     dependsOn:
       compartmentId: ${compartment_ocid}
 
-  ssh_public_key:
-    type: oci:core:ssh:publickey
-    title: "SSH Public Key"
-    description: "Public SSH key to be included in the authorized_keys file on the instance."
-    required: true
-
-  oci_genai_api_key:
-    type: password
-    title: "OCI Generative AI API Key"
-    description: "API key used at instance startup to discover working chat-completions models for OpenClaw."
-    required: true
-
   instance_display_name:
     type: string
     title: "Instance Name"
-    description: "Display name for the OpenClaw compute instance."
+    description: "Enter the display name for the OpenClaw compute instance."
     default: "openclaw"
     required: true
 
   instance_shape:
     type: oci:core:instanceshape:name
     title: "Instance Shape"
-    description: "Select the compute shape for the instance."
+    description: "Select the compute shape for the instance. This choice determines which Oracle Linux 9 images are compatible."
     required: true
     dependsOn:
       compartmentId: ${compartment_ocid}
@@ -81,7 +65,7 @@ variables:
   instance_ocpus:
     type: integer
     title: "OCPUs"
-    description: "Number of OCPUs for the selected flexible instance shape."
+    description: "Enter the number of OCPUs for the selected flexible instance shape."
     default: 2
     minimum: 1
     required: true
@@ -89,7 +73,19 @@ variables:
   instance_memory_gbs:
     type: integer
     title: "Memory (GB)"
-    description: "Memory in GB for the selected flexible instance shape."
+    description: "Enter the memory in GB for the selected flexible instance shape. This must be valid for the chosen OCPU count."
     default: 12
     minimum: 1
+    required: true
+
+  ssh_public_key:
+    type: oci:core:ssh:publickey
+    title: "SSH Public Key"
+    description: "Provide the public SSH key to be included in the authorized_keys file on the instance."
+    required: true
+
+  oci_genai_api_key:
+    type: password
+    title: "OCI Generative AI API Key"
+    description: "Provide the OCI Generative AI API key used at instance startup to discover working chat-completions models for OpenClaw."
     required: true
