@@ -75,12 +75,25 @@ output = {
     "purpose": "usable-chat-models",
     "generatedFrom": str(CANDIDATES_PATH.name),
     "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-    "regions": []
+    "regions": [],
+    "diagnostics": {
+        "apiKeyPresent": bool(API_KEY),
+        "regionChecks": {}
+    }
 }
 
 for region in supported_regions:
     models = chat_candidates.get(region, [])
     if not models:
+        output["diagnostics"]["regionChecks"][region] = {
+            "probeModel": None,
+            "probeStatus": None,
+            "probeClassification": "no_candidates",
+            "probeBodySnippet": "",
+            "usableModels": [],
+            "invalidModelIds": [],
+            "responsesOnlyModels": []
+        }
         continue
 
     base_url = base_template.replace("{region}", region)
@@ -102,37 +115,45 @@ for region in supported_regions:
     status, body = post_json(chat_url, probe_payload)
     classification = classify(status, body)
 
-    if classification not in {"usable", "invalid_model_id", "responses_only", "bad_request", "rate_limited"}:
-        continue
-
     usable_models = []
     excluded_invalid = []
     excluded_responses_only = []
 
-    for model in models:
-        payload = {
-            "model": model,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": "Reply with exactly the word OK"
-                }
-            ],
-            "max_tokens": 8,
-            "temperature": 0
-        }
+    if classification in {"usable", "invalid_model_id", "responses_only", "bad_request", "rate_limited"}:
+        for model in models:
+            payload = {
+                "model": model,
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": "Reply with exactly the word OK"
+                    }
+                ],
+                "max_tokens": 8,
+                "temperature": 0
+            }
 
-        status, body = post_json(chat_url, payload)
-        classification = classify(status, body)
+            model_status, model_body = post_json(chat_url, payload)
+            model_classification = classify(model_status, model_body)
 
-        if classification == "usable":
-            usable_models.append(model)
-        elif classification == "invalid_model_id":
-            excluded_invalid.append(model)
-        elif classification == "responses_only":
-            excluded_responses_only.append(model)
+            if model_classification == "usable":
+                usable_models.append(model)
+            elif model_classification == "invalid_model_id":
+                excluded_invalid.append(model)
+            elif model_classification == "responses_only":
+                excluded_responses_only.append(model)
 
-        time.sleep(0.5)
+            time.sleep(0.5)
+
+    output["diagnostics"]["regionChecks"][region] = {
+        "probeModel": probe_model,
+        "probeStatus": status,
+        "probeClassification": classification,
+        "probeBodySnippet": (body or "")[:500],
+        "usableModels": usable_models,
+        "invalidModelIds": excluded_invalid,
+        "responsesOnlyModels": excluded_responses_only
+    }
 
     if usable_models:
         output["regions"].append(
