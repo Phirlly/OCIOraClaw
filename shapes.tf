@@ -1,7 +1,7 @@
 data "oci_core_shapes" "selected_shape" {
-  compartment_id       = var.compartment_ocid
-  availability_domain  = var.availability_domain
-  shape                = var.instance_shape
+  compartment_id      = var.compartment_ocid
+  availability_domain = var.availability_domain
+  shape               = var.instance_shape
 }
 
 locals {
@@ -14,4 +14,7 @@ locals {
 
   selected_shape_memory_min = try(local.selected_shape.memory_options[0].min_in_gbs, null)
   selected_shape_memory_max = try(local.selected_shape.memory_options[0].max_in_gbs, null)
+
+  selected_shape_memory_per_ocpu_min = try(local.selected_shape.memory_options[0].min_per_ocpu_in_gbs, null)
+  selected_shape_memory_per_ocpu_max = try(local.selected_shape.memory_options[0].max_per_ocpu_in_gbs, null)
 }

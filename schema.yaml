@@ -14,6 +14,7 @@ groupings:
       - availability_domain
       - instance_display_name
       - instance_shape
+      - image_id
       - instance_ocpus
       - instance_memory_gbs
 
@@ -58,13 +59,24 @@ variables:
     required: true
 
   instance_shape:
-    type: oci:core:instanceshapewithflex:name
+    type: oci:core:instanceshape:name
     title: "Instance Shape"
-    description: "Select a flexible compute shape for the instance."
+    description: "Select the compute shape for the instance."
     required: true
     dependsOn:
       compartmentId: ${compartment_ocid}
       availabilityDomain: ${availability_domain}
+
+  image_id:
+    type: oci:core:image:id
+    title: "Image"
+    description: "Select an Oracle Linux 9 image compatible with the selected shape."
+    required: true
+    dependsOn:
+      compartmentId: ${compartment_ocid}
+      shape: ${instance_shape}
+      operatingSystem: "Oracle Linux"
+      operatingSystemVersion: "9"
 
   instance_ocpus:
     type: integer

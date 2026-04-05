@@ -8,6 +8,11 @@ variable "availability_domain" {
   type        = string
 }
 
+variable "image_id" {
+  description = "OCI image OCID selected for the compute instance."
+  type        = string
+}
+
 variable "instance_display_name" {
   description = "Display name for the OpenClaw compute instance."
   type        = string
