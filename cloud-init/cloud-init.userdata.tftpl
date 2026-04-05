@@ -30,4 +30,4 @@ runcmd:
   - mkdir -p /etc/openclaw
   - systemctl daemon-reload
   - systemctl enable openclaw-model-discovery.service
-  - systemctl start openclaw-model-discovery.service
+  - systemctl start openclaw-model-discovery.service || true
