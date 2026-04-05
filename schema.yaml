@@ -1,0 +1,89 @@
+schemaVersion: 1.1.0
+version: "2026.04.05"
+locale: "en"
+groupings:
+  - title: "OpenClaw Instance"
+    visible: true
+    items:
+      - instance_display_name
+      - availability_domain
+      - compartment_ocid
+      - subnet_ocid
+      - image_ocid
+      - ssh_public_key
+      - instance_shape
+      - instance_ocpus
+      - instance_memory_gbs
+
+  - title: "OCI Generative AI Discovery"
+    visible: true
+    items:
+      - oci_genai_api_key
+
+variables:
+  compartment_ocid:
+    type: string
+    title: "Compartment OCID"
+    description: "Compartment where the OpenClaw compute instance will be created."
+    required: true
+
+  subnet_ocid:
+    type: string
+    title: "Subnet OCID"
+    description: "Subnet OCID for the compute instance."
+    required: true
+
+  availability_domain:
+    type: string
+    title: "Availability Domain"
+    description: "Availability domain for the compute instance."
+    required: true
+
+  instance_display_name:
+    type: string
+    title: "Instance Name"
+    description: "Display name for the OpenClaw compute instance."
+    default: "openclaw"
+    required: true
+
+  instance_shape:
+    type: string
+    title: "Instance Shape"
+    description: "OCI compute shape for the instance."
+    default: "VM.Standard.A1.Flex"
+    required: true
+
+  instance_ocpus:
+    type: integer
+    title: "OCPUs"
+    description: "Number of OCPUs for the compute instance."
+    default: 2
+    minimum: 1
+    required: true
+
+  instance_memory_gbs:
+    type: integer
+    title: "Memory (GB)"
+    description: "Memory in GB for the compute instance."
+    default: 12
+    minimum: 1
+    required: true
+
+  image_ocid:
+    type: string
+    title: "Image OCID"
+    description: "OCI image OCID for the compute instance OS image."
+    required: true
+
+  ssh_public_key:
+    type: string
+    title: "SSH Public Key"
+    description: "SSH public key to place on the instance."
+    multiline: true
+    required: true
+
+  oci_genai_api_key:
+    type: password
+    title: "OCI Generative AI API Key"
+    description: "API key used at instance startup to discover working chat-completions models for OpenClaw."
+    required: true

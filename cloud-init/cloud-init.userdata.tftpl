@@ -1,0 +1,40 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - python3
+  - python3-venv
+  - curl
+
+write_files:
+  - path: /opt/openclaw/discovery/01-oci-genai-chat-candidates.json
+    permissions: '0644'
+    owner: root:root
+    content: |
+${indent(6, discovery_candidates_json)}
+
+  - path: /opt/openclaw/discovery/02-discover-oci-genai-chat-models.py
+    permissions: '0755'
+    owner: root:root
+    content: |
+${indent(6, discovery_script_py)}
+
+  - path: /etc/systemd/system/openclaw-model-discovery.service
+    permissions: '0644'
+    owner: root:root
+    content: |
+${indent(6, discovery_service_unit)}
+
+  - path: /etc/openclaw/oci-genai.env
+    permissions: '0600'
+    owner: root:root
+    content: |
+      OCI_GENAI_API_KEY=${oci_genai_api_key}
+
+runcmd:
+  - mkdir -p /opt/openclaw/discovery
+  - mkdir -p /opt/openclaw/runtime
+  - mkdir -p /etc/openclaw
+  - systemctl daemon-reload
+  - systemctl enable openclaw-model-discovery.service
+  - systemctl start openclaw-model-discovery.service

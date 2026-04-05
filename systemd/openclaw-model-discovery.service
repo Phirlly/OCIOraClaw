@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenClaw OCI GenAI Chat Model Discovery
+After=network-online.target
+Wants=network-online.target
+Before=openclaw.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/openclaw/oci-genai.env
+ExecStartPre=/bin/mkdir -p /opt/openclaw/runtime
+ExecStart=/usr/bin/python3 /opt/openclaw/discovery/02-discover-oci-genai-chat-models.py /opt/openclaw/discovery/01-oci-genai-chat-candidates.json /opt/openclaw/runtime/03-oci-genai-chat-models.json
+RemainAfterExit=yes
+Restart=no
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target
