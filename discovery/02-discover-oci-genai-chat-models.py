@@ -176,3 +176,18 @@ with OUTPUT_PATH.open("w", encoding="utf-8") as f:
     f.write("\n")
 
 print(json.dumps(output, indent=2))
+
+# Exit non-zero if discovery produced no usable regions and we saw real failures.
+region_checks = output["diagnostics"]["regionChecks"]
+classifications = [
+    details.get("probeClassification")
+    for details in region_checks.values()
+]
+
+retryable_failure_seen = any(
+    c in {"transport_error", "auth_failed", "forbidden", "other"}
+    for c in classifications
+)
+
+if not output["regions"] and retryable_failure_seen:
+    sys.exit(2)
