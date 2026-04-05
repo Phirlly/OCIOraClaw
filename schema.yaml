@@ -2,41 +2,52 @@ schemaVersion: 1.1.0
 version: "2026.04.05"
 locale: "en"
 groupings:
+  - title: "OpenClaw Access"
+    visible: true
+    items:
+      - ssh_public_key
+      - oci_genai_api_key
+
   - title: "OpenClaw Instance"
     visible: true
     items:
-      - instance_display_name
       - availability_domain
-      - compartment_ocid
-      - subnet_ocid
-      - image_ocid
-      - ssh_public_key
+      - instance_display_name
       - instance_shape
       - instance_ocpus
       - instance_memory_gbs
 
-  - title: "OCI Generative AI Discovery"
-    visible: true
+  - title: "Hidden Resource Manager Context"
+    visible: false
     items:
-      - oci_genai_api_key
+      - compartment_ocid
 
 variables:
   compartment_ocid:
-    type: string
+    type: oci:identity:compartment:id
     title: "Compartment OCID"
-    description: "Compartment where the OpenClaw compute instance will be created."
-    required: true
-
-  subnet_ocid:
-    type: string
-    title: "Subnet OCID"
-    description: "Subnet OCID for the compute instance."
+    description: "Deployment compartment, automatically prepopulated by Resource Manager."
+    visible: false
     required: true
 
   availability_domain:
-    type: string
+    type: oci:identity:availabilitydomain:name
     title: "Availability Domain"
-    description: "Availability domain for the compute instance."
+    description: "Select the availability domain for the compute instance."
+    required: true
+    dependsOn:
+      compartmentId: ${compartment_ocid}
+
+  ssh_public_key:
+    type: oci:core:ssh:publickey
+    title: "SSH Public Key"
+    description: "Public SSH key to be included in the authorized_keys file on the instance."
+    required: true
+
+  oci_genai_api_key:
+    type: password
+    title: "OCI Generative AI API Key"
+    description: "API key used at instance startup to discover working chat-completions models for OpenClaw."
     required: true
 
   instance_display_name:
@@ -47,16 +58,18 @@ variables:
     required: true
 
   instance_shape:
-    type: string
+    type: oci:core:instanceshapewithflex:name
     title: "Instance Shape"
-    description: "OCI compute shape for the instance."
-    default: "VM.Standard.A1.Flex"
+    description: "Select a flexible compute shape for the instance."
     required: true
+    dependsOn:
+      compartmentId: ${compartment_ocid}
+      availabilityDomain: ${availability_domain}
 
   instance_ocpus:
     type: integer
     title: "OCPUs"
-    description: "Number of OCPUs for the compute instance."
+    description: "Number of OCPUs for the selected flexible instance shape."
     default: 2
     minimum: 1
     required: true
@@ -64,26 +77,7 @@ variables:
   instance_memory_gbs:
     type: integer
     title: "Memory (GB)"
-    description: "Memory in GB for the compute instance."
+    description: "Memory in GB for the selected flexible instance shape."
     default: 12
     minimum: 1
-    required: true
-
-  image_ocid:
-    type: string
-    title: "Image OCID"
-    description: "OCI image OCID for the compute instance OS image."
-    required: true
-
-  ssh_public_key:
-    type: string
-    title: "SSH Public Key"
-    description: "SSH public key to place on the instance."
-    multiline: true
-    required: true
-
-  oci_genai_api_key:
-    type: password
-    title: "OCI Generative AI API Key"
-    description: "API key used at instance startup to discover working chat-completions models for OpenClaw."
     required: true

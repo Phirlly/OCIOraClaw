@@ -48,7 +48,6 @@ def post_json(url: str, payload: dict):
         return None, str(e)
 
 
-
 def classify(status, body):
     body_lower = (body or "").lower()
 
@@ -74,7 +73,7 @@ def classify(status, body):
 output = {
     "schemaVersion": 1,
     "purpose": "usable-chat-models",
-    "generatedFrom": str(CANDIDATES_PATH),
+    "generatedFrom": str(CANDIDATES_PATH.name),
     "generatedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
     "regions": []
 }
