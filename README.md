@@ -14,12 +14,6 @@ Launch this stack directly in OCI Resource Manager.
   </a>
 </p>
 
-<p align="center">
-  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fgithub.com%2FPhirlly%2FOCIOraClaw%2Farchive%2Frefs%2Fheads%2Fmain.zip">
-    Direct launch in OCI Resource Manager
-  </a>
-</p>
-
 After the stack opens in OCI Resource Manager, provide the required deployment inputs such as compartment, availability domain, image, SSH public key, and OCI Generative AI API key.
 
 
