@@ -168,7 +168,7 @@ This stack now includes:
 The stack is now functionally working end-to-end, but later improvements may still include:
 
 - stronger secret handling beyond direct API-key rendering into cloud-init and `~/.openclaw/.env`
-- optional migration of any remaining discovery assumptions to fully Responses-native semantics everywhere
+- optional further refinement of model discovery heuristics and exclusions
 - optional exposure improvements (for example Tailscale or reverse proxy / LB patterns) instead of SSH local forwarding
 - optional networking/security hardening after bootstrap validation
 
@@ -206,3 +206,4 @@ export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 ```
 
 before running interactive `openclaw gateway ...` status/health commands.
+```
