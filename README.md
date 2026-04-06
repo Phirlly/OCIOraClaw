@@ -4,6 +4,21 @@
 
 This Resource Manager stack launches an OCI compute instance for OpenClaw, discovers which OCI Generative AI models are actually usable for the supplied API key, and automatically configures OpenClaw to use those discovered models.
 
+## Required OCI IAM Policy for the Generative AI API Key
+
+Before deploying this stack:
+
+1. Create an OCI Generative AI API key.
+2. Copy the API key OCID.
+3. Create an IAM policy that allows that API key to use OCI Generative AI.
+4. Use the API key value in the `oci_genai_api_key` stack variable when launching this stack.
+
+Example IAM policy:
+
+```text
+allow any-user to use generative-ai-family in tenancy where ALL {request.principal.type='generativeaiapikey', request.principal.id='<your-generative-ai-api-key-ocid>'}
+```
+
 ## Quick Deploy to OCI
 
 Launch this stack directly in OCI Resource Manager.
@@ -15,8 +30,6 @@ Launch this stack directly in OCI Resource Manager.
 </p>
 
 After the stack opens in OCI Resource Manager, provide the required deployment inputs such as compartment, availability domain, image, SSH public key, and OCI Generative AI API key.
-
-
 
 The stack now implements an end-to-end automated flow that:
 - provisions the VM and required network resources
