@@ -9,18 +9,19 @@ This Resource Manager stack launches an OCI compute instance for OpenClaw, disco
 Launch this stack directly in OCI Resource Manager.
 
 <p align="center">
-  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fcodeload.github.com%2FPhirlly%2FOCIOraClaw%2Fzip%2Frefs%2Fheads%2Fmain">
+  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fgithub.com%2FPhirlly%2FOCIOraClaw%2Farchive%2Frefs%2Fheads%2Fmain.zip">
     <img src="https://docs.oracle.com/en-us/iaas/Content/Resources/Images/deploy-to-oracle-cloud.svg" alt="Deploy to Oracle Cloud" />
   </a>
 </p>
 
 <p align="center">
-  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fcodeload.github.com%2FPhirlly%2FOCIOraClaw%2Fzip%2Frefs%2Fheads%2Fmain">
+  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fgithub.com%2FPhirlly%2FOCIOraClaw%2Farchive%2Frefs%2Fheads%2Fmain.zip">
     Direct launch in OCI Resource Manager
   </a>
 </p>
 
 After the stack opens in OCI Resource Manager, provide the required deployment inputs such as compartment, availability domain, image, SSH public key, and OCI Generative AI API key.
+
 
 
 The stack now implements an end-to-end automated flow that:
