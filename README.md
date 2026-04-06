@@ -4,6 +4,25 @@
 
 This Resource Manager stack launches an OCI compute instance for OpenClaw, discovers which OCI Generative AI models are actually usable for the supplied API key, and automatically configures OpenClaw to use those discovered models.
 
+## Quick Deploy to OCI
+
+Launch this stack directly in OCI Resource Manager.
+
+<p align="center">
+  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fcodeload.github.com%2FPhirlly%2FOCIOraClaw%2Fzip%2Frefs%2Fheads%2Fmain">
+    <img src="https://docs.oracle.com/en-us/iaas/Content/Resources/Images/deploy-to-oracle-cloud.svg" alt="Deploy to Oracle Cloud" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://cloud.oracle.com/resourcemanager/stacks/create?zipUrl=https%3A%2F%2Fcodeload.github.com%2FPhirlly%2FOCIOraClaw%2Fzip%2Frefs%2Fheads%2Fmain">
+    Direct launch in OCI Resource Manager
+  </a>
+</p>
+
+After the stack opens in OCI Resource Manager, provide the required deployment inputs such as compartment, availability domain, image, SSH public key, and OCI Generative AI API key.
+
+
 The stack now implements an end-to-end automated flow that:
 - provisions the VM and required network resources
 - installs OpenClaw automatically
