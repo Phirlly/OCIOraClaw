@@ -12,6 +12,12 @@ write_files:
     owner: root:root
     content: ${discovery_script_py_b64}
 
+  - path: /opt/openclaw/discovery/03-apply-openclaw-models.py
+    encoding: b64
+    permissions: '0755'
+    owner: root:root
+    content: ${apply_openclaw_models_py_b64}
+
   - path: /etc/systemd/system/openclaw-model-discovery.service
     encoding: b64
     permissions: '0644'
@@ -24,10 +30,31 @@ write_files:
     content: |
       OCI_GENAI_API_KEY=${oci_genai_api_key}
 
+  - path: /home/opc/.openclaw/.env
+    permissions: '0600'
+    owner: opc:opc
+    content: |
+      OCI_GENAI_API_KEY=${oci_genai_api_key}
+
 runcmd:
   - mkdir -p /opt/openclaw/discovery
   - mkdir -p /opt/openclaw/runtime
   - mkdir -p /etc/openclaw
+  - mkdir -p /home/opc/.openclaw
+  - mkdir -p /home/opc/.openclaw/workspace
+  - mkdir -p /home/opc/.openclaw/agents/main/sessions
+  - chown -R opc:opc /home/opc/.openclaw
+  - chmod 700 /home/opc/.openclaw
+  - dnf -y install curl git || true
+  - sudo -u opc bash -lc 'curl -fsSL https://openclaw.ai/install.sh | bash'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw config set agents.defaults.workspace "/home/opc/.openclaw/workspace"'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw config set gateway.bind loopback'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw config set gateway.auth.mode token'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw config set gateway.mode local'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw doctor --generate-gateway-token || true'
   - systemctl daemon-reload
   - systemctl enable openclaw-model-discovery.service
   - systemctl start openclaw-model-discovery.service || true
+  - bash -lc 'for i in $(seq 1 30); do [ -s /opt/openclaw/runtime/03-oci-genai-chat-models.json ] && exit 0; sleep 2; done; echo "Discovery output not ready" >&2; exit 1'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && /usr/bin/python3 /opt/openclaw/discovery/03-apply-openclaw-models.py /opt/openclaw/runtime/03-oci-genai-chat-models.json /home/opc/.npm-global/bin/openclaw'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && systemctl --user daemon-reload && systemctl --user enable openclaw-gateway && systemctl --user restart openclaw-gateway'
