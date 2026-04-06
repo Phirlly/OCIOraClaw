@@ -41,7 +41,9 @@ runcmd:
   - bash -lc 'printf "OCI_GENAI_API_KEY=%s\n" "${oci_genai_api_key}" > /home/opc/.openclaw/.env'
   - chown opc:opc /home/opc/.openclaw/.env
   - chmod 600 /home/opc/.openclaw/.env
-  - sudo -u opc bash -lc 'curl -fsSL https://openclaw.ai/install.sh | bash'
+  - bash -lc 'for i in $(seq 1 30); do curl -fsSL https://openclaw.ai/install.sh -o /tmp/openclaw-install.sh && exit 0; sleep 2; done; echo "OpenClaw installer not reachable" >&2; exit 1'
+  - chmod +x /tmp/openclaw-install.sh
+  - sudo -u opc bash -lc '/tmp/openclaw-install.sh'
   - sudo -u opc env XDG_RUNTIME_DIR=/run/user/$(id -u opc) PATH=/home/opc/.npm-global/bin:/usr/local/bin:/usr/bin:/bin bash -lc 'openclaw config set agents.defaults.workspace "/home/opc/.openclaw/workspace"'
   - sudo -u opc env XDG_RUNTIME_DIR=/run/user/$(id -u opc) PATH=/home/opc/.npm-global/bin:/usr/local/bin:/usr/bin:/bin bash -lc 'openclaw config set gateway.bind loopback'
   - sudo -u opc env XDG_RUNTIME_DIR=/run/user/$(id -u opc) PATH=/home/opc/.npm-global/bin:/usr/local/bin:/usr/bin:/bin bash -lc 'openclaw config set gateway.auth.mode token'
