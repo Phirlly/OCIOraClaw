@@ -206,4 +206,3 @@ export XDG_RUNTIME_DIR="/run/user/$(id -u)"
 ```
 
 before running interactive `openclaw gateway ...` status/health commands.
-```
