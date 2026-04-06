@@ -51,4 +51,5 @@ runcmd:
   - systemctl start openclaw-model-discovery.service || true
   - bash -lc 'for i in $(seq 1 30); do [ -s /opt/openclaw/runtime/03-oci-genai-chat-models.json ] && exit 0; sleep 2; done; echo "Discovery output not ready" >&2; exit 1'
   - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && /usr/bin/python3 /opt/openclaw/discovery/03-apply-openclaw-models.py /opt/openclaw/runtime/03-oci-genai-chat-models.json /home/opc/.npm-global/bin/openclaw'
-  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && systemctl --user daemon-reload && systemctl --user enable openclaw-gateway && systemctl --user restart openclaw-gateway'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw gateway install'
+  - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw gateway restart'
