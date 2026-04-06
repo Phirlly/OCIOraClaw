@@ -36,18 +36,27 @@ if not isinstance(models, list) or not models:
 
 primary_model = f"{PROVIDER_NAME}/{models[0]}"
 
+provider_models = [
+    {
+        "id": model,
+        "name": model
+    }
+    for model in models
+]
+
 provider_payload = [
     {
         "path": f"models.providers.{PROVIDER_NAME}",
         "value": {
             "baseUrl": base_url,
-            "api": "openai-completions",
+            "api": "openai-responses",
             "auth": "api-key",
             "apiKey": {
                 "source": "env",
                 "provider": "default",
                 "id": "OCI_GENAI_API_KEY"
-            }
+            },
+            "models": provider_models
         }
     }
 ]
@@ -91,5 +100,7 @@ print(json.dumps({
     "baseUrl": base_url,
     "primary_model": primary_model,
     "models": models,
-    "model_map": model_map
+    "provider_models": provider_models,
+    "model_map": model_map,
+    "api_mode": "openai-responses"
 }, indent=2))

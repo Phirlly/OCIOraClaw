@@ -59,8 +59,6 @@ def classify(status, body):
         return "forbidden"
     if status == 404 and "entity with key" in body_lower and "not found" in body_lower:
         return "invalid_model_id"
-    if status == 400 and "multi agent requests are not allowed on chat completions" in body_lower:
-        return "responses_only"
     if status == 429:
         return "rate_limited"
     if status == 400:
@@ -78,6 +76,7 @@ output = {
     "regions": [],
     "diagnostics": {
         "apiKeyPresent": bool(API_KEY),
+        "apiMode": "responses",
         "regionChecks": {}
     }
 }
@@ -91,57 +90,39 @@ for region in supported_regions:
             "probeClassification": "no_candidates",
             "probeBodySnippet": "",
             "usableModels": [],
-            "invalidModelIds": [],
-            "responsesOnlyModels": []
+            "invalidModelIds": []
         }
         continue
 
     base_url = base_template.replace("{region}", region)
-    chat_url = f"{base_url}/chat/completions"
+    responses_url = f"{base_url}/responses"
 
     probe_model = models[0]
     probe_payload = {
         "model": probe_model,
-        "messages": [
-            {
-                "role": "user",
-                "content": "Reply with exactly the word OK"
-            }
-        ],
-        "max_tokens": 8,
-        "temperature": 0
+        "input": "Reply with exactly the word OK"
     }
 
-    status, body = post_json(chat_url, probe_payload)
+    status, body = post_json(responses_url, probe_payload)
     classification = classify(status, body)
 
     usable_models = []
     excluded_invalid = []
-    excluded_responses_only = []
 
-    if classification in {"usable", "invalid_model_id", "responses_only", "bad_request", "rate_limited"}:
+    if classification in {"usable", "invalid_model_id", "bad_request", "rate_limited"}:
         for model in models:
             payload = {
                 "model": model,
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": "Reply with exactly the word OK"
-                    }
-                ],
-                "max_tokens": 8,
-                "temperature": 0
+                "input": "Reply with exactly the word OK"
             }
 
-            model_status, model_body = post_json(chat_url, payload)
+            model_status, model_body = post_json(responses_url, payload)
             model_classification = classify(model_status, model_body)
 
             if model_classification == "usable":
                 usable_models.append(model)
             elif model_classification == "invalid_model_id":
                 excluded_invalid.append(model)
-            elif model_classification == "responses_only":
-                excluded_responses_only.append(model)
 
             time.sleep(0.5)
 
@@ -151,8 +132,7 @@ for region in supported_regions:
         "probeClassification": classification,
         "probeBodySnippet": (body or "")[:500],
         "usableModels": usable_models,
-        "invalidModelIds": excluded_invalid,
-        "responsesOnlyModels": excluded_responses_only
+        "invalidModelIds": excluded_invalid
     }
 
     if usable_models:
@@ -164,7 +144,6 @@ for region in supported_regions:
                     "models": usable_models
                 },
                 "excluded": {
-                    "responsesOnlyModels": excluded_responses_only,
                     "invalidModelIds": excluded_invalid
                 }
             }
@@ -177,7 +156,6 @@ with OUTPUT_PATH.open("w", encoding="utf-8") as f:
 
 print(json.dumps(output, indent=2))
 
-# Exit non-zero if discovery produced no usable regions and we saw real failures.
 region_checks = output["diagnostics"]["regionChecks"]
 classifications = [
     details.get("probeClassification")
