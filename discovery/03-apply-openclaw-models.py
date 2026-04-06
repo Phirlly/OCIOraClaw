@@ -8,6 +8,7 @@ DISCOVERY_PATH = Path(
     sys.argv[1] if len(sys.argv) > 1 else "/opt/openclaw/runtime/03-oci-genai-chat-models.json"
 )
 OPENCLAW_BIN = sys.argv[2] if len(sys.argv) > 2 else "/home/opc/.npm-global/bin/openclaw"
+PROVIDER_NAME = "oci"
 
 with DISCOVERY_PATH.open("r", encoding="utf-8") as f:
     discovery = json.load(f)
@@ -18,6 +19,11 @@ if not isinstance(regions, list) or not regions:
     sys.exit(1)
 
 region = regions[0]
+base_url = region.get("baseUrl")
+if not isinstance(base_url, str) or not base_url:
+    print("ERROR: Missing baseUrl in discovery output", file=sys.stderr)
+    sys.exit(1)
+
 chat_completions = region.get("chatCompletions", {})
 if not isinstance(chat_completions, dict):
     print("ERROR: chatCompletions section is missing or invalid", file=sys.stderr)
@@ -28,14 +34,30 @@ if not isinstance(models, list) or not models:
     print("ERROR: No chatCompletions models found in discovery output", file=sys.stderr)
     sys.exit(1)
 
-primary_model = models[0]
+primary_model = f"{PROVIDER_NAME}/{models[0]}"
+
+provider_payload = [
+    {
+        "path": f"models.providers.{PROVIDER_NAME}",
+        "value": {
+            "baseUrl": base_url,
+            "api": "openai-completions",
+            "auth": "api-key",
+            "apiKey": {
+                "source": "env",
+                "provider": "default",
+                "id": "OCI_GENAI_API_KEY"
+            }
+        }
+    }
+]
 
 model_map = {
-    model: {"alias": model}
+    f"{PROVIDER_NAME}/{model}": {"alias": model}
     for model in models
 }
 
-batch_payload = [
+models_payload = [
     {
         "path": "agents.defaults.models",
         "value": model_map
@@ -43,12 +65,17 @@ batch_payload = [
 ]
 
 subprocess.run(
+    [OPENCLAW_BIN, "config", "set", "--batch-json", json.dumps(provider_payload)],
+    check=True,
+)
+
+subprocess.run(
     [OPENCLAW_BIN, "config", "set", "agents.defaults.model", primary_model],
     check=True,
 )
 
 subprocess.run(
-    [OPENCLAW_BIN, "config", "set", "--batch-json", json.dumps(batch_payload)],
+    [OPENCLAW_BIN, "config", "set", "--batch-json", json.dumps(models_payload)],
     check=True,
 )
 
@@ -59,7 +86,9 @@ subprocess.run(
 
 print(json.dumps({
     "ok": True,
+    "provider": PROVIDER_NAME,
     "region": region.get("region"),
+    "baseUrl": base_url,
     "primary_model": primary_model,
     "models": models,
     "model_map": model_map
