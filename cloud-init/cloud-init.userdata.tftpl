@@ -30,22 +30,16 @@ write_files:
     content: |
       OCI_GENAI_API_KEY=${oci_genai_api_key}
 
-  - path: /home/opc/.openclaw/.env
-    permissions: '0600'
-    owner: opc:opc
-    content: |
-      OCI_GENAI_API_KEY=${oci_genai_api_key}
-
 runcmd:
   - mkdir -p /opt/openclaw/discovery
   - mkdir -p /opt/openclaw/runtime
   - mkdir -p /etc/openclaw
-  - mkdir -p /home/opc/.openclaw
-  - mkdir -p /home/opc/.openclaw/workspace
-  - mkdir -p /home/opc/.openclaw/agents/main/sessions
-  - chown -R opc:opc /home/opc/.openclaw
-  - chmod 700 /home/opc/.openclaw
   - dnf -y install curl git || true
+  - sudo -u opc bash -lc 'mkdir -p /home/opc/.openclaw /home/opc/.openclaw/workspace /home/opc/.openclaw/agents/main/sessions'
+  - sudo -u opc bash -lc 'chmod 700 /home/opc/.openclaw'
+  - bash -lc 'printf "OCI_GENAI_API_KEY=%s\n" "${oci_genai_api_key}" > /home/opc/.openclaw/.env'
+  - chown opc:opc /home/opc/.openclaw/.env
+  - chmod 600 /home/opc/.openclaw/.env
   - sudo -u opc bash -lc 'curl -fsSL https://openclaw.ai/install.sh | bash'
   - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw config set agents.defaults.workspace "/home/opc/.openclaw/workspace"'
   - sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH" && openclaw config set gateway.bind loopback'
