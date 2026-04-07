@@ -39,16 +39,6 @@ The stack now implements an end-to-end automated flow that:
 - configures OpenClaw to use the OCI OpenAI-compatible **Responses API** path
 - installs and starts the OpenClaw gateway automatically
 
-## What this stack deploys
-
-- One OCI compute instance
-- Self-contained OCI networking for the instance
-- Cloud-init bootstrap for discovery and OpenClaw setup
-- A systemd oneshot discovery service
-- OpenClaw installation and gateway bootstrap
-- Runtime-generated OCI model catalog written to:
-  - `/opt/openclaw/runtime/03-oci-genai-chat-models.json`
-
 ## Runtime behavior
 
 At first boot, the instance performs these phases:
@@ -65,66 +55,6 @@ At first boot, the instance performs these phases:
 7. Configure the discovered OCI models into OpenClaw
 8. Set the default OpenClaw model to the first discovered usable OCI model
 9. Install and start the OpenClaw gateway service
-
-## Discovery flow
-
-At startup, the instance runs the discovery script sequence:
-
-1. Read candidate catalog from:
-   - `/opt/openclaw/discovery/01-oci-genai-chat-candidates.json`
-2. Read API key from:
-   - `/etc/openclaw/oci-genai.env`
-3. Probe supported OCI Generative AI API-key regions
-4. Validate usable models through the OCI OpenAI-compatible **Responses API**
-5. Write the generated result to:
-   - `/opt/openclaw/runtime/03-oci-genai-chat-models.json`
-6. Apply the discovered provider/model configuration into:
-   - `/home/opc/.openclaw/openclaw.json`
-
-## OpenClaw integration model
-
-The generated OpenClaw config uses:
-- a custom provider named `oci`
-- the discovered region `baseUrl`
-- `api = "openai-responses"`
-- API key auth sourced from:
-  - `~/.openclaw/.env`
-
-Discovered models are registered as provider-scoped refs such as:
-
-- `oci/xai.grok-code-fast-1`
-- `oci/xai.grok-4`
-- `oci/xai.grok-3`
-- `oci/xai.grok-3-mini`
-- `oci/xai.grok-3-fast`
-- `oci/xai.grok-3-mini-fast`
-
-## Stack inputs
-
-This stack expects the following inputs through Resource Manager:
-
-- `compartment_ocid`
-- `availability_domain`
-- `image_id`
-- `ssh_public_key`
-- `oci_genai_api_key`
-
-Optional / defaulted:
-
-- `instance_display_name` (default: `openclaw`)
-- `instance_shape` (default: `VM.Standard.A1.Flex`)
-- `instance_ocpus` (default: `2`)
-- `instance_memory_gbs` (default: `12`)
-
-## Outputs
-
-This stack exports:
-
-- `instance_id`
-- `instance_display_name`
-- `instance_public_ip`
-- `instance_private_ip`
-- `openclaw_discovery_output_path`
 
 ## Public IP behavior
 
@@ -179,16 +109,6 @@ Expected outcomes:
 - discovery output contains usable OCI models
 - `openclaw.json` contains the `oci` provider binding and discovered models
 - OpenClaw gateway is installed, running, and healthy
-
-## Current implementation status
-
-This stack now includes:
-
-- canonical discovery assets under `stack/discovery/`
-- dynamic OpenClaw provider/model application from discovery output
-- systemd discovery service under `stack/systemd/`
-- Terraform-rendered cloud-init bootstrap under `stack/cloud-init/cloud-init.userdata.tftpl`
-- OCI compute launch and self-contained network provisioning
 
 ## Current limitations / next hardening steps
 
