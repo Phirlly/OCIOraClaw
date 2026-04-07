@@ -117,4 +117,4 @@ The stack is now functionally working end-to-end, but later improvements may sti
 - stronger secret handling beyond direct API-key rendering into cloud-init and `~/.openclaw/.env`
 - optional further refinement of model discovery heuristics and exclusions
 - optional exposure improvements (for example Tailscale or reverse proxy / LB patterns) instead of SSH local forwarding
-- optional networking/security hardening after bootstrap validation
+- optional networking/security hardening after bootstrap validation.
