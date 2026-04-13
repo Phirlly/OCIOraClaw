@@ -34,16 +34,20 @@ runcmd:
   - mkdir -p /opt/openclaw/discovery
   - mkdir -p /opt/openclaw/runtime
   - mkdir -p /etc/openclaw
-  - dnf -y install curl git || true
   - loginctl enable-linger opc
   - sudo -u opc bash -lc 'mkdir -p /home/opc/.openclaw /home/opc/.openclaw/workspace /home/opc/.openclaw/agents/main/sessions'
   - sudo -u opc bash -lc 'chmod 700 /home/opc/.openclaw'
   - bash -lc 'printf "OCI_GENAI_API_KEY=%s\n" "${oci_genai_api_key}" > /home/opc/.openclaw/.env'
   - chown opc:opc /home/opc/.openclaw/.env
   - chmod 600 /home/opc/.openclaw/.env
-  - bash -lc 'for i in $(seq 1 30); do curl -fsSL https://openclaw.ai/install.sh -o /tmp/openclaw-install.sh && exit 0; sleep 2; done; echo "OpenClaw installer not reachable" >&2; exit 1'
+  - bash -lc 'set -euo pipefail; for i in $(seq 1 30); do getent hosts openclaw.ai >/dev/null 2>&1 && exit 0; echo "[openclaw-bootstrap] waiting for DNS for openclaw.ai attempt $i/30"; sleep 5; done; echo "[openclaw-bootstrap] DNS not ready for openclaw.ai" >&2; exit 1'
+  - bash -lc 'set -euo pipefail; for i in $(seq 1 30); do getent hosts yum.us-ashburn-1.oci.oraclecloud.com >/dev/null 2>&1 && exit 0; echo "[openclaw-bootstrap] waiting for DNS for OCI yum endpoint attempt $i/30"; sleep 5; done; echo "[openclaw-bootstrap] DNS not ready for OCI yum endpoint" >&2; exit 1'
+  - bash -lc 'set -euo pipefail; for i in $(seq 1 5); do dnf -y install curl git && exit 0; echo "[openclaw-bootstrap] dnf install curl git failed attempt $i/5"; sleep 10; done; echo "[openclaw-bootstrap] failed to install curl and git after retries" >&2; exit 1'
+  - bash -lc 'set -euo pipefail; rm -f /tmp/openclaw-install.sh; for i in $(seq 1 30); do curl -fsSL https://openclaw.ai/install.sh -o /tmp/openclaw-install.sh && [ -s /tmp/openclaw-install.sh ] && exit 0; echo "[openclaw-bootstrap] installer download failed attempt $i/30"; rm -f /tmp/openclaw-install.sh; sleep 5; done; echo "[openclaw-bootstrap] OpenClaw installer not reachable" >&2; exit 1'
+  - bash -lc 'test -s /tmp/openclaw-install.sh || { echo "[openclaw-bootstrap] /tmp/openclaw-install.sh missing after download step" >&2; exit 1; }'
   - chmod +x /tmp/openclaw-install.sh
   - sudo -u opc bash -lc '/tmp/openclaw-install.sh'
+  - bash -lc 'test -x /home/opc/.npm-global/bin/openclaw || { echo "[openclaw-bootstrap] expected OpenClaw binary not found at /home/opc/.npm-global/bin/openclaw" >&2; exit 1; }'
   - sudo -u opc env XDG_RUNTIME_DIR=/run/user/$(id -u opc) PATH=/home/opc/.npm-global/bin:/usr/local/bin:/usr/bin:/bin bash -lc 'openclaw config set agents.defaults.workspace "/home/opc/.openclaw/workspace"'
   - sudo -u opc env XDG_RUNTIME_DIR=/run/user/$(id -u opc) PATH=/home/opc/.npm-global/bin:/usr/local/bin:/usr/bin:/bin bash -lc 'openclaw config set gateway.bind loopback'
   - sudo -u opc env XDG_RUNTIME_DIR=/run/user/$(id -u opc) PATH=/home/opc/.npm-global/bin:/usr/local/bin:/usr/bin:/bin bash -lc 'openclaw config set gateway.auth.mode token'
