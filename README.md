@@ -220,6 +220,7 @@ These commands are not required just to sign in and use OpenClaw.
 
 ```bash
 sudo cloud-init status --long || true
+sudo tail -n 250 /var/log/cloud-init-output.log
 sudo systemctl status openclaw-model-discovery.service --no-pager
 sudo cat /opt/openclaw/runtime/03-oci-genai-chat-models.json
 sudo -u opc bash -lc 'cat /home/opc/.openclaw/openclaw.json'
@@ -234,6 +235,19 @@ Expected outcomes:
 - `openclaw.json` contains the `oci` provider binding and discovered models
 - OpenClaw gateway is installed, running, and healthy
 
+## Notes on bootstrap behavior
+
+The bootstrap has been hardened to improve reliability on first boot.
+In some environments, the OpenClaw installer may need more than one attempt before the binary becomes available.
+The current bootstrap flow retries the installer and only continues once the OpenClaw binary is present.
+
+You may also see non-fatal installer output such as non-interactive `/dev/tty` warnings during bootstrap.
+If `cloud-init` finishes with:
+- `status: done`
+- `errors: []`
+
+and the gateway plus discovery checks succeed, those warnings can be treated as informational rather than deployment failure.
+
 ## Current limitations / next hardening steps
 
 The stack is now functionally working end-to-end, but later improvements may still include:
@@ -241,4 +255,4 @@ The stack is now functionally working end-to-end, but later improvements may sti
 - stronger secret handling beyond direct API-key rendering into cloud-init and `~/.openclaw/.env`
 - optional further refinement of model discovery heuristics and exclusions
 - optional exposure improvements (for example Tailscale or reverse proxy / LB patterns) instead of SSH local forwarding
-- optional networking/security hardening after bootstrap validation
+- optional networking/security hardening after bootstrap validation.
