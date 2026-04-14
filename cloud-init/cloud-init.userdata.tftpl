@@ -40,6 +40,8 @@ runcmd:
   - bash -lc 'printf "OCI_GENAI_API_KEY=%s\n" "${oci_genai_api_key}" > /home/opc/.openclaw/.env'
   - chown opc:opc /home/opc/.openclaw/.env
   - chmod 600 /home/opc/.openclaw/.env
+  - bash -lc 'grep -qxF "export PATH=/home/opc/.npm-global/bin:\$PATH" /home/opc/.bashrc || echo "export PATH=/home/opc/.npm-global/bin:\$PATH" >> /home/opc/.bashrc'
+  - chown opc:opc /home/opc/.bashrc
   - bash -lc 'set -euo pipefail; for i in $(seq 1 30); do getent hosts openclaw.ai >/dev/null 2>&1 && exit 0; echo "[openclaw-bootstrap] waiting for DNS for openclaw.ai attempt $i/30"; sleep 5; done; echo "[openclaw-bootstrap] DNS not ready for openclaw.ai" >&2; exit 1'
   - bash -lc 'set -euo pipefail; for i in $(seq 1 30); do getent hosts yum.us-ashburn-1.oci.oraclecloud.com >/dev/null 2>&1 && exit 0; echo "[openclaw-bootstrap] waiting for DNS for OCI yum endpoint attempt $i/30"; sleep 5; done; echo "[openclaw-bootstrap] DNS not ready for OCI yum endpoint" >&2; exit 1'
   - bash -lc 'set -euo pipefail; for i in $(seq 1 5); do dnf -y install curl git && exit 0; echo "[openclaw-bootstrap] dnf install curl git failed attempt $i/5"; sleep 10; done; echo "[openclaw-bootstrap] failed to install curl and git after retries" >&2; exit 1'
