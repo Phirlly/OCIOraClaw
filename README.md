@@ -54,16 +54,17 @@ At first boot, the instance performs these phases:
 4. Refresh package metadata and install bootstrap dependencies with bounded retries.
 5. Download and run the OpenClaw installer only after the installer endpoint is reachable.
 6. Verify that the OpenClaw binary exists before running configuration commands.
-7. Configure OpenClaw gateway basics:
+7. Create a guarded system-wide symlink at `/usr/local/bin/openclaw` after verifying the installed binary path.
+8. Configure OpenClaw gateway basics:
    - `gateway.mode = local`
    - `gateway.bind = loopback`
    - `gateway.auth.mode = token`
-8. Start the OCI model discovery systemd unit.
-9. Wait for discovery output to exist.
-10. Create a custom OpenClaw provider named `oci`.
-11. Configure the discovered OCI models into OpenClaw.
-12. Set the default OpenClaw model to the first discovered usable OCI model.
-13. Install and start the OpenClaw gateway service.
+9. Start the OCI model discovery systemd unit.
+10. Wait for discovery output to exist.
+11. Create a custom OpenClaw provider named `oci`.
+12. Configure the discovered OCI models into OpenClaw.
+13. Set the default OpenClaw model to the first discovered usable OCI model.
+14. Install and start the OpenClaw gateway service.
 
 ## How OCI model discovery currently works
 
@@ -172,6 +173,18 @@ recoverable_errors: {}
 
 Only after the output shows `status: done` should users proceed with `openclaw` commands.
 
+For instances provisioned from this updated stack, `openclaw` should then be directly available from the shell:
+
+```bash
+openclaw --version
+```
+
+If your SSH session was opened before bootstrap finished and the command is still not found, exit and SSH back in once, then retry:
+
+```bash
+openclaw --version
+```
+
 ## Get the current gateway token in the terminal
 
 After `cloud-init` is complete, print the current OpenClaw gateway token with:
@@ -240,6 +253,10 @@ Expected outcomes:
 The bootstrap has been hardened to improve reliability on first boot.
 In some environments, the OpenClaw installer may need more than one attempt before the binary becomes available.
 The current bootstrap flow retries the installer and only continues once the OpenClaw binary is present.
+
+The bootstrap also creates a guarded symlink at `/usr/local/bin/openclaw` after verifying the installed binary path. This is intended to make the command available more consistently for operators without depending solely on shell startup files.
+
+If `/usr/local/bin/openclaw` already exists and does not point to `/home/opc/.npm-global/bin/openclaw`, bootstrap stops instead of overwriting it.
 
 You may also see non-fatal installer output such as non-interactive `/dev/tty` warnings during bootstrap.
 If `cloud-init` finishes with:

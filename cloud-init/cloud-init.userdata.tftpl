@@ -51,6 +51,7 @@ runcmd:
   - |
       bash -lc 'set -euo pipefail
       OPENCLAW_BIN="/home/opc/.npm-global/bin/openclaw"
+      OPENCLAW_LINK="/usr/local/bin/openclaw"
 
       run_as_opc() {
         sudo -u opc env XDG_RUNTIME_DIR=/run/user/$(id -u opc) PATH=/home/opc/.npm-global/bin:/usr/local/bin:/usr/bin:/bin bash -lc "$1"
@@ -75,6 +76,19 @@ runcmd:
       done
 
       test -x "$OPENCLAW_BIN" || { echo "[openclaw-bootstrap] expected OpenClaw binary not found at $OPENCLAW_BIN" >&2; exit 1; }
+
+      if [ -L "$OPENCLAW_LINK" ]; then
+        CURRENT_TARGET="$(readlink "$OPENCLAW_LINK")"
+        if [ "$CURRENT_TARGET" != "$OPENCLAW_BIN" ]; then
+          echo "[openclaw-bootstrap] existing symlink at $OPENCLAW_LINK points to $CURRENT_TARGET instead of $OPENCLAW_BIN" >&2
+          exit 1
+        fi
+      elif [ -e "$OPENCLAW_LINK" ]; then
+        echo "[openclaw-bootstrap] existing file at $OPENCLAW_LINK prevents creating OpenClaw symlink" >&2
+        exit 1
+      else
+        ln -s "$OPENCLAW_BIN" "$OPENCLAW_LINK"
+      fi
 
       run_as_opc "openclaw config set agents.defaults.workspace /home/opc/.openclaw/workspace"
       run_as_opc "openclaw config set gateway.bind loopback"
