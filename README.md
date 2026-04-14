@@ -1,8 +1,13 @@
 # OpenClaw on OCI via Resource Manager
-
-## Purpose
-
 This Resource Manager stack launches an OCI compute instance for OpenClaw, discovers which OCI Generative AI models are actually usable for the supplied API key through the OCI Responses API, and automatically configures OpenClaw to use those discovered models.
+
+## Provisioned architecture
+
+The following diagram shows the high-level architecture this stack provisions.
+
+<p align="center">
+  <img src="images/arch-diagram.png" alt="OpenClaw on OCI provisioned architecture" />
+</p>
 
 ## Required OCI IAM Policy for the Generative AI API Key
 
