@@ -126,14 +126,6 @@ This means:
 - only the discovered usable region/model set is written into the resulting OpenClaw provider config
 - the stack currently applies only the **first usable region** returned by discovery
 
-### Current limitation: multi-agent models
-
-At the moment, users should treat this stack as supporting **standard discovered OCI Responses API-compatible models only**.
-
-Even if a multi-agent model appears in the discovery candidate list or is returned by the current probe output, **multi-agent models are not yet considered a supported operator workflow for this stack**.
-
-For now, users should rely on the standard discovered Responses API-compatible models that work through the current OpenAI-compatible Responses API integration.
-
 ## Important: wait for cloud-init to finish before running OpenClaw commands
 
 Do not run `openclaw` commands immediately after the VM becomes reachable.
@@ -248,6 +240,5 @@ The stack is now functionally working end-to-end, but later improvements may sti
 
 - stronger secret handling beyond direct API-key rendering into cloud-init and `~/.openclaw/.env`
 - optional further refinement of model discovery heuristics and exclusions
-- explicit filtering of multi-agent models if you want the implementation to match the operator guidance strictly
 - optional exposure improvements (for example Tailscale or reverse proxy / LB patterns) instead of SSH local forwarding
-- optional networking/security hardening after bootstrap validation.
+- optional networking/security hardening after bootstrap validation

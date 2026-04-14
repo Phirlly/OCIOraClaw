@@ -29,7 +29,6 @@
     "us-ashburn-1": [
       "openai.gpt-oss-120b",
       "openai.gpt-oss-20b",
-      "xai.grok-4.20-multi-agent",
       "xai.grok-4.20",
       "xai.grok-code-fast-1",
       "xai.grok-4.1-fast",
@@ -51,7 +50,6 @@
       "meta.llama-3-70b-instruct",
       "openai.gpt-oss-120b",
       "openai.gpt-oss-20b",
-      "xai.grok-4.20-multi-agent",
       "xai.grok-4.20",
       "xai.grok-code-fast-1",
       "xai.grok-4.1-fast",
@@ -64,7 +62,6 @@
     ],
     "us-phoenix-1": [
       "meta.llama-3.3-70b-instruct-fp8-dynamic",
-      "xai.grok-4.20-multi-agent",
       "xai.grok-4.20",
       "xai.grok-code-fast-1",
       "xai.grok-4.1-fast",
