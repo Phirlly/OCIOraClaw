@@ -16,10 +16,8 @@ Before deploying this stack:
 1. Navigate to **Analytics & AI → AI Services → Generative AI → API Keys** and create an OCI Generative AI API key.
 2. Copy the API key **value**.
 3. Copy the API key **OCID**.
-4. Create an IAM policy that allows that API key to use OCI Generative AI.
+4. Create an IAM policy that allows that API key to use OCI Generative AI in the root compartment.
 5. Use the API key **value** in the `oci_genai_api_key` stack variable when launching this stack.
-
-> Note: Create the Generative AI API Key in the same region you plan to spin up your instance
 
 Example IAM policy:
 
@@ -27,9 +25,10 @@ Example IAM policy:
 allow any-user to use generative-ai-family in tenancy where ALL {request.principal.type='generativeaiapikey', request.principal.id='<your-generative-ai-api-key-ocid>'}
 ```
 
-Notes:
-- The **API key value** is what you paste into the Resource Manager stack variable.
-- The **API key OCID** is what you use in the IAM policy condition.
+> Notes:
+> - Create the Generative AI API Key in the same region you plan to spin up your instance
+> - The **API key value** is what you paste into the Resource Manager stack variable.
+> - The **API key OCID** is what you use in the IAM policy condition.
 
 ## Quick Deploy to OCI
 
