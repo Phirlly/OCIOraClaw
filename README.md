@@ -18,6 +18,7 @@ Before deploying this stack:
 3. Copy the API key **OCID**.
 4. Create an IAM policy that allows that API key to use OCI Generative AI in the root compartment.
 5. Use the API key **value** in the `oci_genai_api_key` stack variable when launching this stack.
+6. Have an SSH Key to be used for instance configuration
 
 Example IAM policy:
 
