@@ -51,89 +51,6 @@ The stack implements an end-to-end automated flow that:
 - configures OpenClaw to use the OCI OpenAI-compatible **Responses API** path
 - installs and starts the OpenClaw gateway automatically
 
-## Runtime behavior
-
-At first boot, the instance performs these phases:
-
-1. Install discovery assets and systemd unit.
-2. Create the OpenClaw runtime/config home under `/home/opc/.openclaw`.
-3. Wait for DNS resolution and outbound HTTPS readiness before network-dependent bootstrap steps begin.
-4. Refresh package metadata and install bootstrap dependencies with bounded retries.
-5. Download and run the OpenClaw installer only after the installer endpoint is reachable.
-6. Verify that the OpenClaw binary exists before running configuration commands.
-7. Create a guarded system-wide symlink at `/usr/local/bin/openclaw` after verifying the installed binary path.
-8. Configure OpenClaw gateway basics:
-   - `gateway.mode = local`
-   - `gateway.bind = loopback`
-   - `gateway.auth.mode = token`
-9. Start the OCI model discovery systemd unit.
-10. Wait for discovery output to exist.
-11. Create a custom OpenClaw provider named `oci`.
-12. Configure the discovered OCI models into OpenClaw.
-13. Set the default OpenClaw model to the first discovered usable OCI model.
-14. Install and start the OpenClaw gateway service.
-
-## How OCI model discovery currently works
-
-The current model discovery process is intentionally dynamic.
-It is implemented so that users can supply an OCI Generative AI API key associated with any currently supported region in OCI, and the stack will keep only the regions and models that actually respond as usable through the OCI Responses API for that key.
-
-### Supported discovery regions
-
-The stack currently probes these OCI regions:
-
-- `eu-frankfurt-1`
-- `ap-hyderabad-1`
-- `ap-osaka-1`
-- `us-ashburn-1`
-- `us-chicago-1`
-- `us-phoenix-1`
-
-### How probing works
-
-The discovery process uses the candidate catalog in:
-
-```text
-/opt/openclaw/discovery/01-oci-genai-chat-candidates.json
-```
-
-At startup, the discovery script:
-
-1. Iterates through each supported region.
-2. Builds the OCI Responses API endpoint for that region.
-3. Selects the first configured candidate model for that region as the probe model.
-4. Sends a minimal request to the region’s `responses` endpoint using:
-   - the candidate model ID
-   - `input: "Reply with exactly the word OK"`
-5. Classifies the result.
-
-### What happens after the probe
-
-If the first probe for a region returns one of the following classifications:
-- `usable`
-- `invalid_model_id`
-- `bad_request`
-- `rate_limited`
-
-then the script continues testing all configured candidate models for that region and keeps only the ones that are actually usable.
-
-If the first probe returns one of the following classifications:
-- `auth_failed`
-- `forbidden`
-- `transport_error`
-- `other`
-
-then the script does **not** enumerate all models in that region, because the region is treated as unavailable or not usable for the supplied key in its current state.
-
-### What users should expect
-
-This means:
-- the same API key may succeed in one supported region and fail in another
-- region-level `401` or `403` diagnostics are not automatically a full deployment failure
-- the deployment is considered successful as long as discovery finds at least one usable region with at least one usable model
-- only the discovered usable region/model set is written into the resulting OpenClaw provider config
-- the stack currently applies only the **first usable region** returned by discovery
-
 ## Important: wait for cloud-init to finish before running OpenClaw commands
 
 Do not run `openclaw` commands immediately after the VM becomes reachable.
@@ -271,6 +188,89 @@ If `cloud-init` finishes with:
 - `errors: []`
 
 and the gateway plus discovery checks succeed, those warnings can be treated as informational rather than deployment failure.
+
+## Runtime behavior
+
+At first boot, the instance performs these phases:
+
+1. Install discovery assets and systemd unit.
+2. Create the OpenClaw runtime/config home under `/home/opc/.openclaw`.
+3. Wait for DNS resolution and outbound HTTPS readiness before network-dependent bootstrap steps begin.
+4. Refresh package metadata and install bootstrap dependencies with bounded retries.
+5. Download and run the OpenClaw installer only after the installer endpoint is reachable.
+6. Verify that the OpenClaw binary exists before running configuration commands.
+7. Create a guarded system-wide symlink at `/usr/local/bin/openclaw` after verifying the installed binary path.
+8. Configure OpenClaw gateway basics:
+   - `gateway.mode = local`
+   - `gateway.bind = loopback`
+   - `gateway.auth.mode = token`
+9. Start the OCI model discovery systemd unit.
+10. Wait for discovery output to exist.
+11. Create a custom OpenClaw provider named `oci`.
+12. Configure the discovered OCI models into OpenClaw.
+13. Set the default OpenClaw model to the first discovered usable OCI model.
+14. Install and start the OpenClaw gateway service.
+
+## How OCI model discovery currently works
+
+The current model discovery process is intentionally dynamic.
+It is implemented so that users can supply an OCI Generative AI API key associated with any currently supported region in OCI, and the stack will keep only the regions and models that actually respond as usable through the OCI Responses API for that key.
+
+### Supported discovery regions
+
+The stack currently probes these OCI regions:
+
+- `eu-frankfurt-1`
+- `ap-hyderabad-1`
+- `ap-osaka-1`
+- `us-ashburn-1`
+- `us-chicago-1`
+- `us-phoenix-1`
+
+### How probing works
+
+The discovery process uses the candidate catalog in:
+
+```text
+/opt/openclaw/discovery/01-oci-genai-chat-candidates.json
+```
+
+At startup, the discovery script:
+
+1. Iterates through each supported region.
+2. Builds the OCI Responses API endpoint for that region.
+3. Selects the first configured candidate model for that region as the probe model.
+4. Sends a minimal request to the region’s `responses` endpoint using:
+   - the candidate model ID
+   - `input: "Reply with exactly the word OK"`
+5. Classifies the result.
+
+### What happens after the probe
+
+If the first probe for a region returns one of the following classifications:
+- `usable`
+- `invalid_model_id`
+- `bad_request`
+- `rate_limited`
+
+then the script continues testing all configured candidate models for that region and keeps only the ones that are actually usable.
+
+If the first probe returns one of the following classifications:
+- `auth_failed`
+- `forbidden`
+- `transport_error`
+- `other`
+
+then the script does **not** enumerate all models in that region, because the region is treated as unavailable or not usable for the supplied key in its current state.
+
+### What users should expect
+
+This means:
+- the same API key may succeed in one supported region and fail in another
+- region-level `401` or `403` diagnostics are not automatically a full deployment failure
+- the deployment is considered successful as long as discovery finds at least one usable region with at least one usable model
+- only the discovered usable region/model set is written into the resulting OpenClaw provider config
+- the stack currently applies only the **first usable region** returned by discovery
 
 ## Current limitations / next hardening steps
 
