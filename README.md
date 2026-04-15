@@ -139,6 +139,11 @@ This prints the token currently configured in `/home/opc/.openclaw/openclaw.json
 
 
 ## Accessing the OpenClaw UI
+Open locally in your browser:
+
+```text
+http://127.0.0.1:18789/
+```
 
 The OpenClaw gateway is intentionally configured as loopback-only:
 
@@ -146,18 +151,6 @@ The OpenClaw gateway is intentionally configured as loopback-only:
 - port: `18789`
 
 That means the Control UI is not directly exposed on the VM public IP.
-
-Use an SSH local port forward from your local machine:
-
-```bash
-ssh -i /ABSOLUTE/PATH/TO/YOUR/PRIVATE_KEY -L 18789:127.0.0.1:18789 opc@<INSTANCE_PUBLIC_IP>
-```
-
-Then open locally in your browser:
-
-```text
-http://127.0.0.1:18789/
-```
 
 When prompted, paste the token printed from the terminal.
 
