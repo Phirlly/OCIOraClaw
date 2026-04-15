@@ -57,7 +57,7 @@ First, SSH into the instance using your private key.
 
 ```bash
 ssh -i /ABSOLUTE/PATH/TO/YOUR/PRIVATE_KEY opc@<INSTANCE_PUBLIC_IP>
-
+```
 
 Do not run `openclaw` commands immediately after the VM becomes reachable.
 Wait until first-boot bootstrap has fully completed.
