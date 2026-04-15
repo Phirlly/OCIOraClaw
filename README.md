@@ -53,6 +53,12 @@ The stack implements an end-to-end automated flow that:
 
 ## Important: wait for cloud-init to finish before running OpenClaw commands
 
+First, SSH into the instance using your private key.
+
+```bash
+ssh -i /ABSOLUTE/PATH/TO/YOUR/PRIVATE_KEY opc@<INSTANCE_PUBLIC_IP>
+
+
 Do not run `openclaw` commands immediately after the VM becomes reachable.
 Wait until first-boot bootstrap has fully completed.
 
@@ -109,15 +115,28 @@ If your SSH session was opened before bootstrap finished and the command is stil
 openclaw --version
 ```
 
+After you have verified that `openclaw` is installed, exit that SSH session.
+
+## Reconnect with an SSH local port forward for the OpenClaw UI
+
+From your local machine, open a new SSH session with local port forwarding enabled:
+
+```bash
+ssh -i /ABSOLUTE/PATH/TO/YOUR/PRIVATE_KEY -L 18789:127.0.0.1:18789 opc@<INSTANCE_PUBLIC_IP>
+```
+
+Keep that SSH session open while you use the UI.
+
 ## Get the current gateway token in the terminal
 
-After `cloud-init` is complete, print the current OpenClaw gateway token with:
+In that port-forwarded SSH session, print the current OpenClaw gateway token with:
 
 ```bash
 sudo -u opc bash -lc 'python3 -c "import json; print(json.load(open(\"/home/opc/.openclaw/openclaw.json\"))[\"gateway\"][\"auth\"][\"token\"])"'
 ```
 
-This prints the token currently configured in `/home/opc/.openclaw/openclaw.json`.
+This prints the token currently configured in `/home/opc/.openclaw/openclaw.json`. You will use this token to sign in to the OpenClaw UI.
+
 
 ## Accessing the OpenClaw UI
 
