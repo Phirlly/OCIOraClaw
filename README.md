@@ -13,11 +13,12 @@ The following diagram shows the high-level architecture this stack provisions.
 
 Before deploying this stack:
 
-1. Create an OCI Generative AI API key.
+1. Navigate to **Analytics & AI → AI Services → Generative AI → API Keys** and create an OCI Generative AI API key.
 2. Copy the API key **value**.
 3. Copy the API key **OCID**.
-4. Create an IAM policy that allows that API key to use OCI Generative AI.
+4. Create an IAM policy that allows that API key to use OCI Generative AI in the root compartment.
 5. Use the API key **value** in the `oci_genai_api_key` stack variable when launching this stack.
+6. Have an SSH Key to be used for instance configuration
 
 Example IAM policy:
 
@@ -25,9 +26,10 @@ Example IAM policy:
 allow any-user to use generative-ai-family in tenancy where ALL {request.principal.type='generativeaiapikey', request.principal.id='<your-generative-ai-api-key-ocid>'}
 ```
 
-Notes:
-- The **API key value** is what you paste into the Resource Manager stack variable.
-- The **API key OCID** is what you use in the IAM policy condition.
+> Notes:
+> - Create the Generative AI API Key in the same region you plan to spin up your instance
+> - The **API key value** is what you paste into the Resource Manager stack variable.
+> - The **API key OCID** is what you use in the IAM policy condition.
 
 ## Quick Deploy to OCI
 
@@ -48,6 +50,159 @@ The stack implements an end-to-end automated flow that:
 - binds those discovered models into OpenClaw as a custom `oci` provider
 - configures OpenClaw to use the OCI OpenAI-compatible **Responses API** path
 - installs and starts the OpenClaw gateway automatically
+
+## Important: wait for cloud-init to finish before running OpenClaw commands
+
+First, SSH into the instance using your private key.
+
+```bash
+ssh -i /ABSOLUTE/PATH/TO/YOUR/PRIVATE_KEY opc@<INSTANCE_PUBLIC_IP>
+```
+
+Do not run `openclaw` commands immediately after the VM becomes reachable.
+Wait until first-boot bootstrap has fully completed.
+
+Run this command on the VM:
+
+```bash
+sudo cloud-init status --long || true
+```
+
+### What users see while bootstrap is still running
+
+Example output while the instance is still provisioning OpenClaw and discovery assets:
+
+```text
+[opc@openclaw ~]$ sudo cloud-init status --long || true
+status: running
+extended_status: running
+boot_status_code: enabled-by-generator
+last_update: Thu, 01 Jan 1970 00:00:31 +0000
+detail: DataSourceOracle
+errors: []
+recoverable_errors: {}
+```
+
+If the output shows `status: running`, wait and run the command again in a minute.
+
+### What users see when bootstrap is complete
+
+Example output after bootstrap has finished successfully:
+
+```text
+[opc@openclaw ~]$ sudo cloud-init status --long || true
+status: done
+extended_status: done
+boot_status_code: enabled-by-generator
+last_update: Thu, 01 Jan 1970 00:06:45 +0000
+detail: DataSourceOracle
+errors: []
+recoverable_errors: {}
+[opc@openclaw ~]$
+```
+
+Only after the output shows `status: done` should users proceed with `openclaw` commands.
+
+For instances provisioned from this updated stack, `openclaw` should then be directly available from the shell:
+
+```bash
+openclaw --version
+```
+
+If your SSH session was opened before bootstrap finished and the command is still not found, exit and SSH back in once, then retry:
+
+```bash
+openclaw --version
+```
+
+After you have verified that `openclaw` is installed, exit that SSH session.
+
+## Reconnect with an SSH local port forward for the OpenClaw UI
+
+From your local machine, open a new SSH session with local port forwarding enabled:
+
+```bash
+ssh -i /ABSOLUTE/PATH/TO/YOUR/PRIVATE_KEY -L 18789:127.0.0.1:18789 opc@<INSTANCE_PUBLIC_IP>
+```
+
+Keep that SSH session open while you use the UI.
+
+## Get the current gateway token in the terminal
+
+In that port-forwarded SSH session, print the current OpenClaw gateway token with:
+
+```bash
+sudo -u opc bash -lc 'python3 -c "import json; print(json.load(open(\"/home/opc/.openclaw/openclaw.json\"))[\"gateway\"][\"auth\"][\"token\"])"'
+```
+
+This prints the token currently configured in `/home/opc/.openclaw/openclaw.json`. You will use this token to sign in to the OpenClaw UI.
+
+
+## Accessing the OpenClaw UI
+With the SSH local port forward still running, open this URL locally in your browser:
+
+```text
+http://127.0.0.1:18789/
+```
+
+When prompted, paste the token printed from the terminal.
+
+The OpenClaw gateway is intentionally configured as loopback-only:
+
+- bind: `127.0.0.1`
+- port: `18789`
+
+That means the Control UI is not directly exposed on the VM public IP.
+
+Because the gateway is configured with:
+
+- `bind = loopback`
+- `auth.mode = token`
+
+you must both:
+
+- access it through the SSH local port forward, and
+- provide the current gateway token to log in.
+
+
+## Optional post-deploy verification
+
+Use the following commands only if you want to validate the deployment in more detail or troubleshoot an issue.
+These commands are not required just to sign in and use OpenClaw.
+
+```bash
+sudo cloud-init status --long || true
+sudo tail -n 250 /var/log/cloud-init-output.log
+sudo systemctl status openclaw-model-discovery.service --no-pager
+sudo cat /opt/openclaw/runtime/03-oci-genai-chat-models.json
+sudo -u opc bash -lc 'cat /home/opc/.openclaw/openclaw.json'
+sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH"; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; openclaw gateway status'
+sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH"; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; openclaw health --verbose'
+```
+
+Expected outcomes:
+- cloud-init completes successfully
+- discovery service succeeds
+- discovery output contains usable OCI models
+- `openclaw.json` contains the `oci` provider binding and discovered models
+- OpenClaw gateway is installed, running, and healthy
+
+## Notes on bootstrap behavior
+
+The bootstrap has been hardened to improve reliability on first boot.
+In some environments, the OpenClaw installer may need more than one attempt before the binary becomes available.
+The current bootstrap flow retries the installer and only continues once the OpenClaw binary is present.
+
+The bootstrap also creates a guarded symlink at `/usr/local/bin/openclaw` after verifying the installed binary path. This is intended to make the command available more consistently for operators without depending solely on shell startup files.
+
+If `/usr/local/bin/openclaw` already exists and does not point to `/home/opc/.npm-global/bin/openclaw`, bootstrap stops instead of overwriting it.
+
+You may also see non-fatal installer output such as non-interactive `/dev/tty` warnings during bootstrap.
+If `cloud-init` finishes with:
+- `status: done`
+- `errors: []`
+
+and the gateway plus discovery checks succeed, those warnings can be treated as informational rather than deployment failure.
 
 ## Runtime behavior
 
@@ -131,144 +286,6 @@ This means:
 - the deployment is considered successful as long as discovery finds at least one usable region with at least one usable model
 - only the discovered usable region/model set is written into the resulting OpenClaw provider config
 - the stack currently applies only the **first usable region** returned by discovery
-
-## Important: wait for cloud-init to finish before running OpenClaw commands
-
-Do not run `openclaw` commands immediately after the VM becomes reachable.
-Wait until first-boot bootstrap has fully completed.
-
-Run this command on the VM:
-
-```bash
-sudo cloud-init status --long || true
-```
-
-### What users see while bootstrap is still running
-
-Example output while the instance is still provisioning OpenClaw and discovery assets:
-
-```text
-[opc@openclaw ~]$ sudo cloud-init status --long || true
-status: running
-extended_status: running
-boot_status_code: enabled-by-generator
-last_update: Thu, 01 Jan 1970 00:00:31 +0000
-detail: DataSourceOracle
-errors: []
-recoverable_errors: {}
-```
-
-If the output shows `status: running`, wait and run the command again in a minute.
-
-### What users see when bootstrap is complete
-
-Example output after bootstrap has finished successfully:
-
-```text
-[opc@openclaw ~]$ sudo cloud-init status --long || true
-status: done
-extended_status: done
-boot_status_code: enabled-by-generator
-last_update: Thu, 01 Jan 1970 00:06:45 +0000
-detail: DataSourceOracle
-errors: []
-recoverable_errors: {}
-[opc@openclaw ~]$
-```
-
-Only after the output shows `status: done` should users proceed with `openclaw` commands.
-
-For instances provisioned from this updated stack, `openclaw` should then be directly available from the shell:
-
-```bash
-openclaw --version
-```
-
-If your SSH session was opened before bootstrap finished and the command is still not found, exit and SSH back in once, then retry:
-
-```bash
-openclaw --version
-```
-
-## Get the current gateway token in the terminal
-
-After `cloud-init` is complete, print the current OpenClaw gateway token with:
-
-```bash
-sudo -u opc bash -lc 'python3 -c "import json; print(json.load(open(\"/home/opc/.openclaw/openclaw.json\"))[\"gateway\"][\"auth\"][\"token\"])"'
-```
-
-This prints the token currently configured in `/home/opc/.openclaw/openclaw.json`.
-
-## Accessing the OpenClaw UI
-
-The OpenClaw gateway is intentionally configured as loopback-only:
-
-- bind: `127.0.0.1`
-- port: `18789`
-
-That means the Control UI is not directly exposed on the VM public IP.
-
-Use an SSH local port forward from your local machine:
-
-```bash
-ssh -i /ABSOLUTE/PATH/TO/YOUR/PRIVATE_KEY -L 18789:127.0.0.1:18789 opc@<INSTANCE_PUBLIC_IP>
-```
-
-Then open locally in your browser:
-
-```text
-http://127.0.0.1:18789/
-```
-
-When prompted, paste the token printed from the terminal.
-
-Because the gateway is configured with:
-- `bind = loopback`
-- `auth.mode = token`
-
-you must both:
-- access it through the SSH local port forward, and
-- provide the current gateway token to log in.
-
-## Optional post-deploy verification
-
-Use the following commands only if you want to validate the deployment in more detail or troubleshoot an issue.
-These commands are not required just to sign in and use OpenClaw.
-
-```bash
-sudo cloud-init status --long || true
-sudo tail -n 250 /var/log/cloud-init-output.log
-sudo systemctl status openclaw-model-discovery.service --no-pager
-sudo cat /opt/openclaw/runtime/03-oci-genai-chat-models.json
-sudo -u opc bash -lc 'cat /home/opc/.openclaw/openclaw.json'
-sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH"; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; openclaw gateway status'
-sudo -u opc bash -lc 'export PATH="/home/opc/.npm-global/bin:$PATH"; export XDG_RUNTIME_DIR="/run/user/$(id -u)"; openclaw health --verbose'
-```
-
-Expected outcomes:
-- cloud-init completes successfully
-- discovery service succeeds
-- discovery output contains usable OCI models
-- `openclaw.json` contains the `oci` provider binding and discovered models
-- OpenClaw gateway is installed, running, and healthy
-
-## Notes on bootstrap behavior
-
-The bootstrap has been hardened to improve reliability on first boot.
-In some environments, the OpenClaw installer may need more than one attempt before the binary becomes available.
-The current bootstrap flow retries the installer and only continues once the OpenClaw binary is present.
-
-The bootstrap also creates a guarded symlink at `/usr/local/bin/openclaw` after verifying the installed binary path. This is intended to make the command available more consistently for operators without depending solely on shell startup files.
-
-If `/usr/local/bin/openclaw` already exists and does not point to `/home/opc/.npm-global/bin/openclaw`, bootstrap stops instead of overwriting it.
-
-You may also see non-fatal installer output such as non-interactive `/dev/tty` warnings during bootstrap.
-If `cloud-init` finishes with:
-- `status: done`
-- `errors: []`
-
-and the gateway plus discovery checks succeed, those warnings can be treated as informational rather than deployment failure.
 
 ## Current limitations / next hardening steps
 
